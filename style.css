@@ -440,23 +440,29 @@ progress#amplitudeBar::-moz-progress-bar {
 /* --- Falling Blocks & Game Elements --- */
 .game-block {
   position: absolute;
-  left: 0;
-  height: 30px;
-  color: rgba(0, 0, 0, 0.7);
-  display: flex;
+  left: 0; /* Position determined by engine/JS */
+  display: flex; /* Use flexbox for easy centering */
   justify-content: center;
   align-items: center;
-  font-weight: 600;
-  font-size: 1.1em;
-  border-radius: 4px;
-  box-shadow: none;
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
+
+  /* --- Appearance Tweaks --- */
+  height: 28px; /* Slightly smaller to accommodate border */
+  font-family: "Quicksand", sans-serif; /* Ensure font is applied */
+  font-size: 1.0em; /* Adjust as needed */
+  font-weight: 600; /* Bolder */
+  color: rgba(0, 0, 0, 0.85); /* Slightly darker text */
+  text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3); /* Subtle light text shadow for depth */
+  border: 1px solid rgba(0, 0, 0, 0.2); /* Darker border */
+  border-radius: 5px; /* Slightly more rounded corners */
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), /* Inner highlight */
+              0 2px 3px rgba(0, 0, 0, 0.1); /* Subtle outer shadow */
+  padding: 0 5px; /* Add some horizontal padding */
   transition: top 0.05s linear, opacity 0.25s ease-out, transform 0.25s ease-out,
     background-color 0.2s linear;
-  font-family: var(--font-family);
   z-index: 10;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  text-shadow: none;
+  overflow: hidden; /* Clip content if needed */
+
 }
 
 .game-block[data-note="A"] {
@@ -558,7 +564,7 @@ progress#amplitudeBar::-moz-progress-bar {
 .modal {
   display: none;
   position: fixed;
-  z-index: 1000;
+  z-index: 2100;
   left: 0;
   top: 0;
   width: 100%;

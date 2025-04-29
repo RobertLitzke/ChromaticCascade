@@ -1,0 +1,398 @@
+/* game.css */
+
+/* --- Game Mode Specific Layout --- */
+#gameModeContainer {
+  margin-top: 0;
+}
+.game-layout-flex {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+#gameArea {
+  position: relative;
+  width: var(--game-area-width, 500px);
+  max-width: 100%;
+  height: var(--game-area-height, 600px);
+  background: var(--bg-game-area);
+  margin: 0;
+  border: 1px solid var(--border-darker);
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+#gameSidePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 150px;
+  max-width: 180px;
+  align-items: stretch;
+  padding-top: 0;
+  color: var(--text-secondary);
+}
+
+.side-panel-label {
+  font-size: 0.75em;
+  color: #78909c;
+  margin-bottom: 4px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+#noteDisplayContainer,
+#penaltyBarContainer,
+#levelDisplayContainer,
+#noteCountContainer {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-side-panel);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+#noteDisplayNote {
+  font-size: 2.4em;
+  font-weight: 600;
+  color: var(--accent-primary);
+  min-height: 1.2em;
+  line-height: 1;
+  font-family: monospace;
+  margin-bottom: 5px;
+}
+
+.bar-background {
+  height: 12px;
+  background-color: #e0f7fa;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  padding: 1px;
+}
+#penaltyBar {
+  width: 0%;
+  height: 100%;
+  background-color: var(--penalty-color);
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+
+#levelDisplay {
+  font-size: 1.6em;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 5px;
+}
+#levelProgress {
+  width: 100%;
+  height: 10px;
+  margin-top: 0px;
+  border-radius: 5px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border-color);
+  background-color: var(--progress-bg);
+  overflow: hidden;
+}
+#levelProgress::-webkit-progress-bar {
+  background-color: var(--progress-bg);
+  border-radius: 5px;
+}
+#levelProgress::-webkit-progress-value {
+  background: var(--progress-level);
+  border-radius: 4px;
+  transition: width 0.2s ease-in-out;
+}
+#levelProgress::-moz-progress-bar {
+  background: var(--progress-level);
+  border-radius: 4px;
+  transition: width 0.2s ease-in-out;
+}
+
+#noteCountContainer {
+  background-color: #e3f2fd;
+  border-color: #bbdefb;
+}
+#noteCountDisplay {
+  font-size: 1.6em;
+  font-weight: 600;
+  color: #1e88e5;
+  line-height: 1;
+  font-family: monospace;
+}
+
+#gameControlPanel {
+  margin-top: auto;
+  padding: 10px 0 0 0;
+  background-color: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+#gameControlPanel button {
+  margin: 0;
+  background-color: var(--accent-secondary);
+  color: var(--text-primary);
+  border: none;
+  font-weight: 500;
+  padding: 12px 15px;
+  box-shadow: 0 2px 5px var(--shadow-color);
+  transition: background-color 0.2s ease;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#gameControlPanel button:hover:not(:disabled) {
+  background-color: var(--accent-primary);
+}
+#gameControlPanel button:disabled {
+  background-color: #cfd8dc;
+  color: #90a4ae;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+#gameStatus {
+  margin-top: 10px;
+  font-style: normal;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  min-height: 1.2em;
+  width: 100%;
+  text-align: center;
+}
+
+/* --- Falling Blocks & Game Elements --- */
+.game-block {
+  position: absolute;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  height: 28px;
+  font-family: "Quicksand", sans-serif;
+  font-size: 1em;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.85);
+  text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    0 2px 3px rgba(0, 0, 0, 0.1);
+  padding: 0 5px;
+  transition: top 0.05s linear, opacity 0.25s ease-out, transform 0.25s ease-out,
+    background-color 0.2s linear;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.game-block[data-note="A"] {
+  background-color: #ff6b6b;
+  border-color: #cc5656;
+}
+.game-block[data-note="As"] {
+  background-color: #ff6b6b;
+  border-color: #cc5656;
+}
+.game-block[data-note="B"] {
+  background-color: #ffd166;
+  border-color: #cca752;
+}
+.game-block[data-note="C"] {
+  background-color: #90ee90;
+  border-color: #73be73;
+}
+.game-block[data-note="Cs"] {
+  background-color: #1dd1a1;
+  border-color: #17a781;
+}
+.game-block[data-note="D"] {
+  background-color: #4ecdc4;
+  border-color: #3ea49d;
+}
+.game-block[data-note="Ds"] {
+  background-color: #54a0ff;
+  border-color: #4380cc;
+}
+.game-block[data-note="E"] {
+  background-color: #9b59b6;
+  border-color: #7c4792;
+}
+.game-block[data-note="F"] {
+  background-color: #c7a2cb;
+  border-color: #9f82a2;
+}
+.game-block[data-note="Fs"] {
+  background-color: #fda7df;
+  border-color: #ca86b2;
+}
+.game-block[data-note="G"] {
+  background-color: #e67e22;
+  border-color: #b8651b;
+}
+.game-block[data-note="Gs"] {
+  background-color: #bdc3c7;
+  border-color: #979c9f;
+}
+
+.game-block.lowest-note {
+  outline: 2px solid var(--highlight-glow);
+  outline-offset: 1px;
+  box-shadow: 0 0 8px var(--highlight-glow),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.game-block.cleared {
+  animation: noteClearShrink 0.25s ease-in forwards;
+  box-shadow: none !important;
+  outline: none !important;
+  filter: none !important;
+  border-color: transparent !important;
+}
+@keyframes noteClearShrink {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+/* --- Game Area Helper Lines --- */
+.column-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: rgba(176, 190, 197, 0.3);
+  z-index: 1;
+}
+.end-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--penalty-color);
+  bottom: 0px;
+  z-index: 5;
+  box-shadow: 0 0 5px var(--penalty-color);
+}
+
+/* --- Generic Overlay Styles --- */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  border-radius: inherit;
+}
+.overlay.visible {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- Specific Game Overlays --- */
+/* Level Flash Overlay */
+#levelFlashOverlay {
+  background-color: var(--level-flash-bg);
+  z-index: 2000;
+}
+#levelFlashText {
+  color: var(--level-flash-text);
+  font-size: 4.5em;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Pause Overlay */
+#pauseOverlay {
+  background-color: var(--bg-overlay);
+  backdrop-filter: blur(3px);
+  z-index: 1900;
+}
+#pauseOverlay .material-icons {
+  font-size: 8em;
+  color: var(--accent-primary);
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* NEW: End Game Overlay */
+#endGameOverlay {
+  background-color: rgba(255, 255, 255, 0.85); /* More opaque white */
+  backdrop-filter: blur(4px);
+  z-index: 1950; /* Above pause, below level flash */
+  color: var(--text-primary);
+  text-align: center;
+}
+.end-game-content {
+  background-color: var(--bg-container);
+  padding: 30px 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-darker);
+}
+.end-game-content h2 {
+  color: var(--text-accent);
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 2em;
+}
+.end-game-content p {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+}
+.end-game-content p span {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.end-game-buttons {
+  margin-top: 25px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+.end-game-buttons button {
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: 500;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+#restartGameButton {
+  background-color: var(--accent-secondary);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+#restartGameButton:hover {
+  background-color: var(--accent-primary);
+}
+#returnToMenuButton {
+  background-color: #e0e0e0; /* Grey */
+  color: var(--text-secondary);
+  border-color: #bdbdbd;
+}
+#returnToMenuButton:hover {
+  background-color: #bdbdbd;
+  color: var(--text-primary);
+}

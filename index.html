@@ -4,20 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chromatic Cascade</title>
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="game.css" />
   </head>
   <body>
     <div id="audioControlPanel">
-      <button id="toggleListeningButton" title="Toggle Listening">
-        <span class="material-icons">mic</span>
+      <button id="toggleListeningButton" title="Toggle Listening" disabled> <span class="material-icons">mic</span>
       </button>
       <button id="togglePlaybackButton" disabled title="Toggle Playback">
         <span class="material-icons">volume_up</span>
@@ -31,62 +25,120 @@
     <div id="appContainer">
       <div id="mainContent">
         <h1>Chromatic Cascade</h1>
-        <div id="gameModeContainer">
-          <div class="game-layout-flex">
-            <div id="gameArea">
-              <div id="newGameOverlay" class="overlay visible">
-                <button id="newGameButton">New Game</button>
-              </div>
-              <div id="pauseOverlay" class="overlay">
-                <span class="material-icons">pause_circle</span>
-              </div>
-              <div id="levelFlashOverlay" class="overlay">
-                <span id="levelFlashText"></span>
-              </div>
-            </div>
 
-            <div id="gameSidePanel">
-              <div id="noteDisplayContainer">
-                <div class="side-panel-label">Detected Note</div>
-                <div id="noteDisplayNote">--</div>
-              </div>
-              <div id="penaltyBarContainer">
-                <div class="side-panel-label">Penalty</div>
-                <div class="bar-background"><div id="penaltyBar"></div></div>
-              </div>
-              <div id="levelDisplayContainer">
-                <div class="side-panel-label">Level</div>
-                <div id="levelDisplay">1</div>
-                <progress id="levelProgress" max="1" value="0"></progress>
-              </div>
-              <div id="noteCountContainer">
-                <div class="side-panel-label">Score</div>
-                <div id="noteCountDisplay">0</div>
-              </div>
-              <div id="gameControlPanel">
-                <button id="pauseGameButton" disabled>Pause</button>
-              </div>
-              <div id="gameStatus">Status: Idle</div>
+        <div id="configMenu" class="config-menu visible"> <h2>Game Setup</h2>
+
+          <div class="config-option">
+            <label for="difficultySelect">Difficulty:</label>
+            <select id="difficultySelect">
+              <option value="misty">Misty (Easy)</option>
+              <option value="drizzle" selected>Drizzle (Medium)</option>
+              <option value="pouring">Pouring (Hard)</option>
+              <option value="torrential">Torrential (Ultra)</option>
+            </select>
+          </div>
+
+          <div class="config-option">
+            <label>Note Mode:</label>
+            <div class="radio-group">
+              <input type="radio" id="noteModeChromatic" name="noteMode" value="chromatic" checked>
+              <label for="noteModeChromatic">Chromatic</label>
+              <br>
+              <input type="radio" id="noteModeMajorScale" name="noteMode" value="majorScale">
+              <label for="noteModeMajorScale">Major Scale</label>
+              <br>
+               <input type="radio" id="noteModeManual" name="noteMode" value="manual">
+              <label for="noteModeManual">Manual Select</label>
             </div>
           </div>
+
+          <div class="config-option" id="keySelectionGroup" style="display: none;">
+            <label for="keySelect">Root Note (Major Scale):</label>
+            <select id="keySelect">
+              <option value="C">C</option>
+              <option value="C#">C#</option>
+              <option value="D">D</option>
+              <option value="D#">D#</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+              <option value="F#">F#</option>
+              <option value="G">G</option>
+              <option value="G#">G#</option>
+              <option value="A">A</option>
+              <option value="A#">A#</option>
+              <option value="B">B</option>
+            </select>
+          </div>
+
+          <div class="config-option">
+            <label>Notes Active:</label>
+            <div id="noteSelectionDisplay" class="note-display">
+              </div>
+          </div>
+
+           <div class="config-option" id="manualNoteSelectionGroup" style="display: none;">
+             <label>Select Notes Manually:</label>
+             <div id="manualNoteCheckboxes" class="note-checkbox-group">
+               </div>
+           </div>
+
+
+          <button id="startGameButton" class="start-game-button">Start Game</button>
         </div>
-      </div>
-    </div>
-    <div id="tunerModal" class="modal">
+        <div id="gameWrapper" class="game-wrapper"> <div id="gameModeContainer">
+            <div class="game-layout-flex">
+              <div id="gameArea">
+                <div id="pauseOverlay" class="overlay">
+                  <span class="material-icons">pause_circle</span>
+                </div>
+                <div id="levelFlashOverlay" class="overlay">
+                  <span id="levelFlashText"></span>
+                </div>
+                <div id="endGameOverlay" class="overlay end-game-overlay">
+                   <div class="end-game-content">
+                     <h2>Game Over!</h2>
+                     <p>Final Score: <span id="endGameScore">0</span></p>
+                     <p>Level Reached: <span id="endGameLevel">1</span></p>
+                     <div class="end-game-buttons">
+                       <button id="restartGameButton">Restart</button>
+                       <button id="returnToMenuButton">New Game</button>
+                     </div>
+                   </div>
+                </div>
+              </div>
+
+              <div id="gameSidePanel">
+                 <div id="noteDisplayContainer">
+                  <div class="side-panel-label">Detected Note</div>
+                  <div id="noteDisplayNote">--</div>
+                </div>
+                <div id="penaltyBarContainer">
+                  <div class="side-panel-label">Penalty</div>
+                  <div class="bar-background"><div id="penaltyBar"></div></div>
+                </div>
+                <div id="levelDisplayContainer">
+                  <div class="side-panel-label">Level</div>
+                  <div id="levelDisplay">1</div>
+                  <progress id="levelProgress" max="1" value="0"></progress>
+                </div>
+                <div id="noteCountContainer">
+                  <div class="side-panel-label">Score</div>
+                  <div id="noteCountDisplay">0</div>
+                </div>
+                <div id="gameControlPanel">
+                  <button id="pauseGameButton" disabled>Pause</button>
+                </div>
+                <div id="gameStatus">Status: Idle</div>
+              </div>
+            </div>
+          </div>
+        </div> </div> </div> <div id="tunerModal" class="modal">
       <div class="modal-content">
-        <button
-          id="closeTunerButton"
-          class="modal-close-button"
-          title="Close Tuner"
-        >
-          &times;
-        </button>
+        <button id="closeTunerButton" class="modal-close-button" title="Close Tuner">&times;</button>
         <h2>Tuner Details</h2>
         <div id="largeNoteDisplay" class="large-note">--</div>
         <div class="tuner-display">
-          <div class="tuner-markings">
-            <span>-50</span><span>0</span><span>+50</span>
-          </div>
+          <div class="tuner-markings"><span>-50</span><span>0</span><span>+50</span></div>
           <div class="tuner-indicator-track">
             <div id="tunerIndicator" class="tuner-indicator"></div>
           </div>
@@ -99,26 +151,14 @@
           <span>Detection Details:</span>
           <table id="pitchTable">
             <thead>
-              <tr>
-                <th>Detection</th>
-                <th>Frequency (Hz)</th>
-                <th>Note</th>
-                <th>Cents</th>
-              </tr>
+              <tr><th>Detection</th><th>Frequency (Hz)</th><th>Note</th><th>Cents</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Raw</td>
-                <td id="rawFreq">---</td>
-                <td id="rawNote">---</td>
-                <td id="rawCents">---</td>
-              </tr>
+              <tr><td>Raw</td><td id="rawFreq">---</td><td id="rawNote">---</td><td id="rawCents">---</td></tr>
             </tbody>
           </table>
         </div>
       </div>
-    </div>
-
-    <script type="module" src="/js/bundle.js"></script>
+    </div> <script type="module" src="/js/bundle.js"></script>
   </body>
 </html>

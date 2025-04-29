@@ -1,9 +1,12 @@
+// ts/audio-controller.ts
+
 import { PitchDetector, DetectedNote } from "./pitch-detector";
 
 function getElement<T extends HTMLElement>(
   id: string,
   typeName: string
 ): T | null {
+  /* ... no change ... */
   const el = document.getElementById(id);
   if (!el) {
     console.warn(
@@ -18,7 +21,7 @@ function getElement<T extends HTMLElement>(
   return el as T;
 }
 
-export type NoteUpdateCallback = (
+export type AudioUpdateCallback = (
   note: DetectedNote | null,
   rms: number
 ) => void;
@@ -39,15 +42,15 @@ export class AudioController {
 
   // State
   private isListening: boolean = false;
-  private isPlaybackEnabled: boolean = true; // Start with sound ON
+  private isPlaybackEnabled: boolean = true;
   private latestRms: number = 0;
   private latestNote: DetectedNote | null = null;
   private isStarting: boolean = true; // Flag during initial auto-start attempt
 
-  // Callback
-  private onNoteUpdate: NoteUpdateCallback;
+  private onAudioUpdate: AudioUpdateCallback;
 
-  constructor(noteCallback: NoteUpdateCallback) {
+  constructor(audioCallback: AudioUpdateCallback) {
+    /* ... no change ... */
     this.toggleListeningButton = getElement<HTMLButtonElement>(
       "toggleListeningButton",
       "Toggle Listening Button"
@@ -61,8 +64,7 @@ export class AudioController {
       this.toggleListeningButton?.querySelector("span.material-icons") ?? null;
     this.playbackIcon =
       this.togglePlaybackButton?.querySelector("span.material-icons") ?? null;
-    this.onNoteUpdate = noteCallback;
-
+    this.onAudioUpdate = audioCallback;
     if (
       !this.toggleListeningButton ||
       !this.togglePlaybackButton ||
@@ -73,123 +75,146 @@ export class AudioController {
       console.error(
         "AudioController Error: Failed to find essential control elements or icons."
       );
-      return;
+      if (this.statusDiv) this.statusDiv.textContent = "UI Error";
     }
     this.setupEventListeners();
-    this.updateButtonStates(); // Set initial state (listening=false, playback=true)
+    this.updateButtonStates(); // Set initial state (will be disabled due to isStarting=true)
     if (this.statusDiv) this.statusDiv.textContent = "Initializing...";
-
-    // Attempt auto-start after listeners are attached
-    this.attemptAutoStart();
+    this.attemptAutoStart(); // Attempt to start mic automatically
   }
 
-  // Separate function for attempting auto-start, allows retries or user prompts if needed
   private async attemptAutoStart() {
+    /* ... no change ... */
     console.log("Attempting to auto-start listening...");
-    this.isStarting = true; // Mark as starting
+    this.isStarting = true;
     if (this.statusDiv) this.statusDiv.textContent = "Starting Mic...";
+    this.updateButtonStates();
     try {
-      // Create context if it doesn't exist (needed before starting)
       if (!this.audioContext) {
         this.audioContext = new (window.AudioContext ||
           (window as any).webkitAudioContext)();
-        // Check state *after* creation, may need resume()
-        if (this.audioContext.state === "suspended") {
-          console.warn(
-            "AudioContext suspended. User interaction might be needed to resume."
-          );
-          // Add a visual cue for the user?
-          if (this.statusDiv)
-            this.statusDiv.textContent = "Click page to enable mic";
-          // Add a one-time click listener to resume context
-          const resumeHandler = async () => {
-            if (this.audioContext?.state === "suspended") {
-              console.log("Resuming audio context on user interaction.");
-              await this.audioContext.resume();
-              // Now try starting again if not already started by a manual click
-              if (!this.isListening) {
-                await this.startListening();
-              }
-            }
-            document.body.removeEventListener("click", resumeHandler); // Remove listener after use
-          };
-          document.body.addEventListener("click", resumeHandler, {
-            once: true,
-          });
-          // Don't proceed with startListening until resumed
-          this.isStarting = false;
-          return;
-        }
       }
-      // If context is running or was just created okay, proceed to start
-      await this.startListening();
+      let initialState: AudioContextState | undefined =
+        this.audioContext?.state;
+      if (initialState === "suspended") {
+        console.warn("AudioContext suspended. User interaction needed.");
+        if (this.statusDiv)
+          this.statusDiv.textContent = "Click page to enable mic";
+        const resumeHandler = async () => {
+          document.body.removeEventListener("click", resumeHandler);
+          if (!this.audioContext) {
+            console.error("AudioContext missing...");
+            this.isStarting = false;
+            this.updateButtonStates();
+            return;
+          }
+          let currentState = this.audioContext.state;
+          if (currentState === "suspended") {
+            console.log("Resuming audio context...");
+            try {
+              await this.audioContext.resume();
+              currentState = this.audioContext.state;
+              console.log("AudioContext resumed. New State:", currentState);
+              if (currentState === "running" && !this.isListening) {
+                await this.startListening();
+              } else if (currentState !== "running") {
+                if (this.statusDiv)
+                  this.statusDiv.textContent = "Resume Failed";
+                console.warn(`Could not resume. State: ${currentState}`);
+              }
+            } catch (err) {
+              console.error("Resume failed:", err);
+              if (this.statusDiv)
+                this.statusDiv.textContent = "Mic Resume Error";
+            } finally {
+              this.isStarting = false;
+              this.updateButtonStates();
+            }
+          } else {
+            console.log(
+              `Resume handler clicked, but context state is: ${currentState}`
+            );
+            this.isStarting = false;
+            this.updateButtonStates();
+          }
+        };
+        document.body.addEventListener("click", resumeHandler, { once: true });
+        this.isStarting = false;
+        this.updateButtonStates();
+        return;
+      } else if (initialState === "running") {
+        await this.startListening();
+      } else {
+        console.warn(
+          `Initial AudioContext state is not 'running' or 'suspended': ${initialState}`
+        );
+        if (this.statusDiv) this.statusDiv.textContent = "Mic Init Failed";
+      }
     } catch (error) {
-      console.error("Auto-start listening failed:", error);
-      // Don't set statusDiv here, startListening already handles error display
+      console.error("Auto-start process failed:", error);
+      if (this.statusDiv) this.statusDiv.textContent = "Mic Error";
     } finally {
-      this.isStarting = false; // Finished starting attempt
-      // Ensure button states are correct after attempt
-      this.updateButtonStates();
+      if (this.audioContext?.state !== "suspended") {
+        this.isStarting = false;
+        this.updateButtonStates();
+      }
     }
   }
 
   private setupEventListeners(): void {
+    /* ... no change ... */
     this.toggleListeningButton?.addEventListener("click", () => {
       if (!this.isStarting) {
-        // Prevent toggle if initial start is still pending
         this.toggleListening();
       } else {
-        console.log("Ignoring toggle click during initial start attempt.");
+        console.log("Ignoring listening toggle during initial start.");
       }
     });
-    this.togglePlaybackButton?.addEventListener("click", () =>
-      this.togglePlayback()
-    );
+    this.togglePlaybackButton?.addEventListener("click", () => {
+      this.togglePlayback();
+    });
     window.addEventListener("beforeunload", () => {
-      if (this.isListening) this.stopListening();
+      this.stopListening();
     });
   }
-
   private handlePitchDetection(note: DetectedNote | null): void {
+    /* ... no change ... */
     this.latestNote = note;
     this.latestRms = note?.rms ?? 0;
-    this.onNoteUpdate(this.latestNote, this.latestRms);
+    this.onAudioUpdate(this.latestNote, this.latestRms);
   }
-
   public async toggleListening(): Promise<void> {
-    if (this.isListening) await this.stopListening();
-    else await this.startListening();
-  }
-
-  public async startListening(): Promise<void> {
-    if (this.isListening) return;
-    if (this.isStarting && !this.audioContext) {
-      // If auto-start is running but context creation failed somehow earlier
-      console.warn(
-        "Start called while isStarting=true but no context, retrying context creation."
-      );
-      await this.attemptAutoStart(); // Retry the whole sequence
-      return; // Exit here, let retry handle it
+    /* ... no change ... */
+    if (this.isListening) {
+      await this.stopListening();
+    } else {
+      await this.startListening();
     }
-
-    console.log("startListening() called...");
+  }
+  public async startListening(): Promise<void> {
+    /* ... no change ... */
+    if (this.isListening || this.isStarting) return;
+    console.log("AudioController: startListening() called...");
+    this.isStarting = true;
     if (this.statusDiv) this.statusDiv.textContent = "Starting Mic...";
-    this.isListening = true;
-    this.updateButtonStates(); // Optimistic UI
-
+    this.updateButtonStates();
     try {
-      if (!this.audioContext || this.audioContext.state === "closed")
+      if (!this.audioContext || this.audioContext.state === "closed") {
+        console.log("Creating new AudioContext...");
         this.audioContext = new (window.AudioContext ||
           (window as any).webkitAudioContext)();
-      if (this.audioContext.state === "suspended") {
-        console.log("Resuming suspended audio context...");
-        await this.audioContext.resume(); // Attempt resume again if needed
       }
-      if (this.audioContext.state !== "running")
+      let currentContextState = this.audioContext.state;
+      if (currentContextState === "suspended") {
+        console.log("Context suspended, attempting resume...");
+        await this.audioContext.resume();
+        currentContextState = this.audioContext.state;
+      }
+      if (currentContextState !== "running") {
         throw new Error(
-          `AudioContext not running (state: ${this.audioContext.state}). User interaction might be required.`
+          `AudioContext failed to start or resume (state: ${currentContextState}).`
         );
-
+      }
       if (!this.gainNode) {
         this.gainNode = this.audioContext.createGain();
         this.gainNode.connect(this.audioContext.destination);
@@ -198,11 +223,12 @@ export class AudioController {
         this.isPlaybackEnabled ? 1 : 0,
         this.audioContext.currentTime
       );
-      if (!this.pitchDetectorInstance)
+      if (!this.pitchDetectorInstance) {
         this.pitchDetectorInstance = new PitchDetector({
           audioContext: this.audioContext,
           onNoteDetected: (n) => this.handlePitchDetection(n),
         });
+      }
       await this.pitchDetectorInstance.start();
       if (this.pitchDetectorInstance?.stream && !this.sourceNodeForPlayback) {
         this.sourceNodeForPlayback = this.audioContext.createMediaStreamSource(
@@ -220,26 +246,37 @@ export class AudioController {
       }
       this.isListening = true;
       if (this.statusDiv) this.statusDiv.textContent = "Listening";
-      console.log("Listening started successfully.");
+      console.log("AudioController: Listening started successfully.");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (this.statusDiv) this.statusDiv.textContent = `Mic Error`;
-      console.error("Error starting audio:", err);
-      // Reset state fully on error
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("AudioController: Error starting audio -", errorMsg);
+      if (this.statusDiv) this.statusDiv.textContent = "Mic Error";
       this.isListening = false;
-      // Don't call stopListening here as it might try to stop things that failed to start
+      this.pitchDetectorInstance?.stop();
+      try {
+        this.sourceNodeForPlayback?.disconnect();
+      } catch (e) {}
+      this.sourceNodeForPlayback = null;
     } finally {
       this.isStarting = false;
       this.updateButtonStates();
-    } // Mark starting as finished
+    }
   }
-
   public async stopListening(): Promise<void> {
-    // No need to check context state here, just stop if listening
-    if (!this.isListening) return;
-    console.log("Stopping listener...");
+    /* ... no change ... */
+    if (!this.isListening) {
+      if (this.isStarting) {
+        console.log(
+          "StopListening called during start attempt, cancelling start."
+        );
+        this.isStarting = false;
+      }
+      return;
+    }
+    console.log("AudioController: Stopping listener...");
     const wasListening = this.isListening;
     this.isListening = false;
+    this.isStarting = false;
     this.pitchDetectorInstance?.stop();
     try {
       this.sourceNodeForPlayback?.disconnect();
@@ -247,17 +284,22 @@ export class AudioController {
     this.sourceNodeForPlayback = null;
     this.latestNote = null;
     this.latestRms = 0;
-    if (wasListening) this.onNoteUpdate(null, 0);
+    if (wasListening) {
+      this.onAudioUpdate(null, 0);
+    }
     if (this.statusDiv) this.statusDiv.textContent = "Mic Off";
     this.updateButtonStates();
-    console.log("Listener stopped.");
+    console.log("AudioController: Listener stopped.");
   }
-
   public togglePlayback(): void {
-    // Allow toggling even if not listening, just update the state
+    /* ... no change ... */
     this.isPlaybackEnabled = !this.isPlaybackEnabled;
-    if (this.isListening && this.audioContext && this.gainNode) {
-      // Apply gain change only if listening
+    console.log(
+      `AudioController: Playback toggled to ${
+        this.isPlaybackEnabled ? "ON" : "OFF"
+      }.`
+    );
+    if (this.audioContext && this.gainNode) {
       const targetGain = this.isPlaybackEnabled ? 1 : 0;
       this.gainNode.gain.setTargetAtTime(
         targetGain,
@@ -266,28 +308,74 @@ export class AudioController {
       );
     }
     this.updateButtonStates();
-    console.log(`Playback toggled: ${this.isPlaybackEnabled ? "ON" : "OFF"}`);
   }
 
+  // *** MODIFIED updateButtonStates ***
   private updateButtonStates(): void {
+    // Listening button state
     if (this.toggleListeningButton && this.listeningIcon) {
-      this.toggleListeningButton.disabled = this.isStarting; // Disable only during initial auto-start attempt
+      const needsInteraction = this.audioContext?.state === "suspended";
+      // *** FIX: Disable if interaction needed, OR if actively starting. Enable otherwise. ***
+      this.toggleListeningButton.disabled = needsInteraction || this.isStarting;
+
       this.listeningIcon.textContent = this.isListening ? "mic_off" : "mic";
-      this.toggleListeningButton.setAttribute(
-        "title",
-        this.isListening ? "Stop Listening" : "Start Listening"
-      );
+
+      if (needsInteraction && !this.isStarting) {
+        // Indicate interaction needed *after* initial start attempt finishes
+        this.toggleListeningButton.style.opacity = "0.6";
+        this.toggleListeningButton.setAttribute(
+          "title",
+          "Click page to enable microphone"
+        );
+        if (this.statusDiv)
+          this.statusDiv.textContent = "Click page to enable mic"; // Redundant with attemptAutoStart? maybe ok
+      } else if (this.isStarting) {
+        // Indicate starting in progress
+        this.toggleListeningButton.style.opacity = "0.6";
+        this.toggleListeningButton.setAttribute(
+          "title",
+          "Initializing microphone..."
+        );
+      } else {
+        // Normal enabled state
+        this.toggleListeningButton.style.opacity = "1";
+        this.toggleListeningButton.setAttribute(
+          "title",
+          this.isListening ? "Stop Listening" : "Start Listening"
+        );
+      }
     }
+
+    // Playback button state (enable only when listening is possible/active)
     if (this.togglePlaybackButton && this.playbackIcon) {
-      // Always enable playback button unless during initial startup? Or maybe always enable? Let's enable always.
-      this.togglePlaybackButton.disabled = false; // Enable playback toggle always
+      // Enable playback toggle only if mic is active OR potentially usable (not closed/failed hard)
+      const micPotentiallyUsable =
+        this.audioContext?.state === "running" ||
+        this.audioContext?.state === "suspended";
+      this.togglePlaybackButton.disabled = !micPotentiallyUsable; // Enable if running or suspended
+
       this.playbackIcon.textContent = this.isPlaybackEnabled
         ? "volume_off"
-        : "volume_up"; // Reflect actual state
+        : "volume_up";
       this.togglePlaybackButton.setAttribute(
         "title",
         this.isPlaybackEnabled ? "Mute Playback" : "Unmute Playback"
       );
+    }
+
+    // Update overall status text based on listening state if not handled by interaction need
+    if (
+      this.statusDiv &&
+      !this.isStarting &&
+      this.audioContext?.state !== "suspended"
+    ) {
+      this.statusDiv.textContent = this.isListening ? "Listening" : "Mic Off";
+    } else if (
+      this.statusDiv &&
+      !this.isStarting &&
+      this.audioContext?.state === "suspended"
+    ) {
+      this.statusDiv.textContent = "Click page to enable mic";
     }
   }
 }
